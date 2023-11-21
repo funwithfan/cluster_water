@@ -29,7 +29,7 @@ void findConnectedComponents(int **adjMatrix, int numNodes, int* numComponents, 
         if (!visited[i]) {
             (*numComponents)++;
             int componentSize = 0;
-            dfs(i, visited, adjMatrix, numNodes, connectedComponent[i], &componentSize);
+            dfs(i, visited, adjMatrix, numNodes, connectedComponent[*numComponents - 1], &componentSize);
             componentSizes[*numComponents - 1] = componentSize;
             //printf("there are %d nodes in component #%d\n", componentSize, *numComponents);
         }

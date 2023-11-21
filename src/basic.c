@@ -144,3 +144,42 @@ void doubleArraysDotDivision(int size, double *array1, double *array2, double *p
         product[i] = array1[i] / array2[i];
     }
 }
+
+// Write 2D double matrix to file
+void saveDouble2DMatrix(char *filename, int rows, int cols, double **array) {
+    int i, j;
+    FILE *fpw = fopen(filename, "w");
+    for(i = 0; i < rows; i++) {
+        for(j = 0; j < cols; j++) {
+            fprintf(fpw, "%f ", array[i][j]);
+        }
+        fprintf(fpw, "\n");
+    }
+    fclose(fpw);
+    printf("Matrix saved to %s\n", filename);
+}
+
+// Write 2D int matrix to file
+void saveInt2DMatrix(char *filename, int rows, int cols, int **array) {
+    int i, j;
+    FILE *fpw = fopen(filename, "w");
+    for(i = 0; i < rows; i++) {
+        for(j = 0; j < cols; j++) {
+            fprintf(fpw, "%d ", array[i][j]);
+        }
+        fprintf(fpw, "\n");
+    }
+    fclose(fpw);
+    printf("Matrix saved to %s\n", filename);
+}
+
+// Write 1D int array to file
+void saveInt1DArray(char *filename, int length, int *array) {
+    int i;
+    FILE *fpw = fopen(filename, "w");
+    for(i = 0; i < length; i++) {
+        fprintf(fpw, "%d\n", array[i]);
+    }
+    fclose(fpw);
+    printf("Array saved to %s\n", filename);
+}

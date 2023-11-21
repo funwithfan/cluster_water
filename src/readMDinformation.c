@@ -225,7 +225,7 @@ void energy_perCluster_size(struct MOL *mol, int numClusters, int *clusterSizes,
 
     for (cluster_id = 0; cluster_id < numClusters; cluster_id++) {
         size = clusterSizes[cluster_id];
-        for (i = 0; i < clusterSizes[cluster_id]; i++) {
+        for (i = 0; i < size; i++) {
             molID = clusters[cluster_id][i];
             mol[molID].clusterID = cluster_id;
             mol[molID].clusterSize = size;
@@ -241,10 +241,10 @@ void save_result(char *filename, int max_size, int numFrame, int *size_count_acc
     fpw = fopen(filename, "w");
     double size_count_mean, degree_count_mean, PE_s_mean, KE_s_mean;
     for (size = 0; size < max_size; size++) {
-        size_count_mean = size_count_accumulated[size] / (1.0 * numFrame);
-        degree_count_mean = degree_count_accumulated[size] / (1.0 * numFrame);
-        PE_s_mean = PE_s_accumulated[size] / size_count_accumulated[size];
-        KE_s_mean = KE_s_accumulated[size] / size_count_accumulated[size];
+        size_count_mean = (1.0 * size_count_accumulated[size]) / (1.0 * numFrame);
+        degree_count_mean = (1.0 * degree_count_accumulated[size]) / (1.0 * numFrame);
+        PE_s_mean = PE_s_accumulated[size] / (1.0 * size_count_accumulated[size]);
+        KE_s_mean = KE_s_accumulated[size] / (1.0 * size_count_accumulated[size]);
 
         fprintf(fpw, "%d\t%e\t%e\t%e\t%e\n", size, size_count_mean, degree_count_mean, PE_s_mean, KE_s_mean);
     }

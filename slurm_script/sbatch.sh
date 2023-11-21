@@ -1,6 +1,6 @@
 #!/bin/bash
 
-P=300
+P=540
 numFrame=2501
 save_every=100
 resultDir="/home/users/jcfan/sc_water/Hill_result"

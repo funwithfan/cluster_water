@@ -15,3 +15,6 @@ void sumRowsInt2DMatrix(int rows, int cols, int **array, int *sumRows);
 void doubleArraysDotProduct(int size, double *array1, double *array2, double *product);
 void intArraysMutiplyConstant(int size, int *array, double constant, double *product);
 void doubleArraysDotDivision(int size, double *array1, double *array2, double *product);
+void saveDouble2DMatrix(char *filename, int rows, int cols, double **array);
+void saveInt2DMatrix(char *filename, int rows, int cols, int **array);
+void saveInt1DArray(char *filename, int length, int *array);

@@ -62,14 +62,14 @@ int main(int argc, char ** argv) {
     }
     else {
         // comment out these two lines if debugging locally
-        printf("Not enough input variables. Quiting...\n");
-        return 0; 
+        //printf("Not enough input variables. Quiting...\n");
+        //return 0; 
 
         printf("Local debugging:\n");
         p = 240;
-        t = 300;
-        numFrame = 10;
-        save_every = 5;
+        t = 700;
+        numFrame = 100;
+        save_every = 10;
         sprintf(resultDir, "/Users/jingcunfan/Documents/data_cp_network/Hill_SPCE");
         sprintf(simulationDir, "/Users/jingcunfan/Documents/MD_simulations/sc_water/cluster");
         
@@ -130,6 +130,17 @@ int main(int argc, char ** argv) {
 
         // Energy per cluster vs. cluster size
         energy_perCluster_size(mol, numClusters, clusterSizes, clusters, PE_s_accumulated, KE_s_accumulated);
+
+        //double pe_mean = 0;
+        //for (i = 0; i < numMol; i++) {
+        //    pe_mean += mol[i].PE / numMol;
+        //}
+
+        //char *filename="cluster.txt";
+        //saveInt2DMatrix(filename, N, N, clusters);
+        //char *filename2="clusterSizes.txt";
+        //saveInt1DArray(filename2, N, clusterSizes);
+        
 
         printf("Finished with frame %d. There are %d clusters in this frame.\n", frame, numClusters);
 
