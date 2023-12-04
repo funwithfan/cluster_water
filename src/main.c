@@ -26,8 +26,9 @@ double a_fs2m_s = 1e5;
 double g_mol2kg = 1.6611e-27;
 
 int main(int argc, char ** argv) {
-    int N = 8544;
+    int N = 8545; // 8544 + 1, +1 is due to the starting index of 0
     struct MOL mol[N];
+    
     int i;
     
     double **peMatrix = (double **)malloc(N * sizeof(double *));
@@ -38,17 +39,15 @@ int main(int argc, char ** argv) {
         adjacencyMatrix[i] = (int *)malloc(N * sizeof(int));
         clusters[i] = (int *)malloc(N * sizeof(int));
     }
-    int numClusters;
+    int numClusters_hill, numClusters_cutoff;
     int clusterSizes[N];
     int nodesDegree[N];
 
-    FILE *fpr_position;
-    FILE *fpr_velocity;
     char resultDir[FILENAME_MAX];
     char simulationDir[FILENAME_MAX];
-    char filename_position[FILENAME_MAX];
-    char filename_velocity[FILENAME_MAX];
-    char filename_result[FILENAME_MAX];
+    char filename_dump[FILENAME_MAX];
+    char filename_result_hill[FILENAME_MAX];
+    char filename_result_cutoff[FILENAME_MAX];
 
     int p ,t, numFrame, save_every;
 
@@ -68,10 +67,10 @@ int main(int argc, char ** argv) {
         printf("Local debugging:\n");
         p = 240;
         t = 700;
-        numFrame = 100;
+        numFrame = 10;
         save_every = 10;
-        sprintf(resultDir, "/Users/jingcunfan/Documents/data_cp_network/Hill_SPCE");
-        sprintf(simulationDir, "/Users/jingcunfan/Documents/MD_simulations/sc_water/cluster");
+        sprintf(resultDir, "/Users/jingcunfan/Documents/data_cp_network/DBSCAN_SPCE");
+        sprintf(simulationDir, "/Users/jingcunfan/Documents/MD_simulations/sc_water/newRuns");
         
     }
     printf("P = %d atm\n", p);
@@ -87,21 +86,22 @@ int main(int argc, char ** argv) {
     sprintf(cmd, "mkdir -p %s", resultDir);
     printf("%s\n", cmd);
     system(cmd);
-    sprintf(filename_result, "%s/%datm_%dK.txt", resultDir, p, t);
-    
-    // Open simulation dump file
-    sprintf(filename_position, "%s/SPCE_%datm/%dK/position.xmol", simulationDir, p, t);
-    sprintf(filename_velocity, "%s/SPCE_%datm/%dK/velocity.xmol", simulationDir, p, t);
-    fpr_position = fopen(filename_position,"r");
-    fpr_velocity = fopen(filename_velocity,"r");
+    sprintf(filename_result_hill, "%s/%datm_%dK_hill.txt", resultDir, p, t);
+    sprintf(filename_result_cutoff, "%s/%datm_%dK_cutoff.txt", resultDir, p, t);
 
-    int size_count_accumulated[N], degree_count_accumulated[N];
-    initializeIntArray(N, size_count_accumulated, 0);
-    initializeIntArray(N, degree_count_accumulated, 0);
+    int size_count_accumulated_hill[N], degree_count_accumulated_hill[N];
+    int size_count_accumulated_cutoff[N], degree_count_accumulated_cutoff[N];
+    initializeIntArray(N, size_count_accumulated_hill, 0);
+    initializeIntArray(N, degree_count_accumulated_hill, 0);
+    initializeIntArray(N, size_count_accumulated_cutoff, 0);
+    initializeIntArray(N, degree_count_accumulated_cutoff, 0);
     
-    double PE_s_accumulated[N], KE_s_accumulated[N];
-    initializeDoubleArray(N, PE_s_accumulated, 0);
-    initializeDoubleArray(N, KE_s_accumulated, 0);
+    double PE_s_accumulated_hill[N], KE_s_accumulated_hill[N];
+    double PE_s_accumulated_cutoff[N], KE_s_accumulated_cutoff[N];
+    initializeDoubleArray(N, PE_s_accumulated_hill, 0);
+    initializeDoubleArray(N, KE_s_accumulated_hill, 0);
+    initializeDoubleArray(N, PE_s_accumulated_cutoff, 0);
+    initializeDoubleArray(N, KE_s_accumulated_cutoff, 0);
 
     // Traverse through each snapshot
     printf("-----------------------------------------------------\n");
@@ -110,26 +110,42 @@ int main(int argc, char ** argv) {
     for (frame = 0; frame < numFrame; frame++) {
         int numMol;
         double boxLength;
+        int timestep = 250000 + frame * 100;
 
         // Load atom information  
-        readAtomInformation(fpr_position, fpr_velocity, &numMol, &boxLength, mol);
+        sprintf(filename_dump, "%s/SPCE_%datm/%dK/dump/%d.dump", simulationDir, p, t, timestep);
+        readAtomInformation(filename_dump, &numMol, &boxLength, mol);
 
         // Calculate molecule energies
         calculatePE_perMol(mol, numMol, peMatrix, boxLength);
         calculateKE_perMol(mol, numMol);
         calculateCOMvelcoity_perMol(mol, numMol);
 
-        // Find clusters
-        getAdjacencyMatrix(mol, adjacencyMatrix, peMatrix, numMol);
-        findConnectedComponents(adjacencyMatrix, numMol, &numClusters, clusterSizes, clusters);
+        // Find clusters based on Hill' energy criterion
+        getAdjacencyMatrix_Hill(mol, adjacencyMatrix, peMatrix, numMol);
+        findConnectedComponents(adjacencyMatrix, numMol, &numClusters_hill, clusterSizes, clusters);
         sumRowsInt2DMatrix(numMol, numMol, adjacencyMatrix, nodesDegree);
         
         // Cluster size distribution and degree distribution
-        histogram(clusterSizes, numClusters, size_count_accumulated);
-        histogram(nodesDegree, numMol, degree_count_accumulated);
+        histogram(clusterSizes, numClusters_hill, size_count_accumulated_hill);
+        histogram(nodesDegree, numMol, degree_count_accumulated_hill);
 
         // Energy per cluster vs. cluster size
-        energy_perCluster_size(mol, numClusters, clusterSizes, clusters, PE_s_accumulated, KE_s_accumulated);
+        energy_perCluster_size(mol, numClusters_hill, clusterSizes, clusters, PE_s_accumulated_hill, KE_s_accumulated_hill);
+
+
+        // Find clusters based on cutoff distance criterion
+        double cutoff = 3.4;
+        getAdjacencyMatrix_distance(mol, adjacencyMatrix, numMol, boxLength, cutoff);
+        findConnectedComponents(adjacencyMatrix, numMol, &numClusters_cutoff, clusterSizes, clusters);
+        sumRowsInt2DMatrix(numMol, numMol, adjacencyMatrix, nodesDegree);
+        
+        // Cluster size distribution and degree distribution
+        histogram(clusterSizes, numClusters_cutoff, size_count_accumulated_cutoff);
+        histogram(nodesDegree, numMol, degree_count_accumulated_cutoff);
+
+        // Energy per cluster vs. cluster size
+        energy_perCluster_size(mol, numClusters_cutoff, clusterSizes, clusters, PE_s_accumulated_cutoff, KE_s_accumulated_cutoff);
 
         //double pe_mean = 0;
         //for (i = 0; i < numMol; i++) {
@@ -141,21 +157,23 @@ int main(int argc, char ** argv) {
         //char *filename2="clusterSizes.txt";
         //saveInt1DArray(filename2, N, clusterSizes);
         
-
-        printf("Finished with frame %d. There are %d clusters in this frame.\n", frame, numClusters);
+        printf("Finished with frame %d. There are %d (Hill) or %d (cutoff) clusters in this frame.\n", frame, numClusters_hill, numClusters_cutoff);
 
         // Save every certain frames
         if((frame + 1) % save_every == 0){
-            save_result(filename_result, N, frame + 1, size_count_accumulated, degree_count_accumulated, PE_s_accumulated, KE_s_accumulated);
-            printf("Result averaged over all %d frames and saved to %s\n", frame + 1, filename_result);
+            save_result(filename_result_hill, N, frame + 1, size_count_accumulated_hill, degree_count_accumulated_hill, PE_s_accumulated_hill, KE_s_accumulated_hill);
+            save_result(filename_result_cutoff, N, frame + 1, size_count_accumulated_cutoff, degree_count_accumulated_cutoff, PE_s_accumulated_cutoff, KE_s_accumulated_cutoff);
+            printf("Result of Hill averaged over all %d frames and saved to %s\n", frame + 1, filename_result_hill);
+            printf("Result of cutiff averaged over all %d frames and saved to %s\n", frame + 1, filename_result_cutoff);
         }
     }
-    fclose(fpr_position);
-    fclose(fpr_velocity);
 
     // Save result
-    save_result(filename_result, N, numFrame, size_count_accumulated, degree_count_accumulated, PE_s_accumulated, KE_s_accumulated);
-    printf("Result averaged over all %d frames and saved to %s\n", numFrame, filename_result);
+    save_result(filename_result_hill, N, numFrame, size_count_accumulated_hill, degree_count_accumulated_hill, PE_s_accumulated_hill, KE_s_accumulated_hill);
+    save_result(filename_result_cutoff, N, numFrame, size_count_accumulated_cutoff, degree_count_accumulated_cutoff, PE_s_accumulated_cutoff, KE_s_accumulated_cutoff);
+
+    printf("Result averaged over all %d frames and saved to %s\n", numFrame, filename_result_hill);
+    printf("Result averaged over all %d frames and saved to %s\n", numFrame, filename_result_cutoff);
 
     free(peMatrix);
     free(adjacencyMatrix);

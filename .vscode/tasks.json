@@ -8,7 +8,7 @@
                 "-fdiagnostics-color=always",
                 "${workspaceFolder}/src/*.c",
                 "-o",
-                "${workspaceFolder}/build/hill",
+                "${workspaceFolder}/build/cluster",
                 "-lm"
             ],
             "options": {

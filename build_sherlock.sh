@@ -2,6 +2,6 @@
 
 source_dir="src"
 output_dir="build"
-build_name="hill_sherlock"
+build_name="cluster_sherlock"
 
 gcc "${source_dir}"/*.c -o "${output_dir}/${build_name}" -lm

@@ -1,10 +1,12 @@
 #!/bin/bash
 
-P=540
-numFrame=2501
+programDir="/home/users/jcfan/MyPrograms/cluster_energy/build/cluster_sherlock"
+
+P=240
+numFrame=5001
 save_every=100
-resultDir="/home/users/jcfan/sc_water/Hill_result"
-simulationDir="/scratch/users/jcfan/sc_water/MD"
+resultDir="/home/users/jcfan/sc_water/cluster_result"
+simulationDir="/scratch/users/jcfan/sc_water/MD/newRuns"
 
 # 使用 seq 命令生成 T1 和 T2 数组的元素
 T1=($(seq 300 25 1200))
@@ -20,7 +22,7 @@ for ((i=0; i<$num_jobs; i++)); do
     job_name="${P}_${T}"  
     output_file="${P}_${T}_%j.out" 
     error_file="${P}_${T}_%j.err" 
-    time_limit="5:00:00"
+    time_limit="10:00:00"
     partition="normal"
     cpus="1"
     memory="2GB"
@@ -35,7 +37,7 @@ for ((i=0; i<$num_jobs; i++)); do
     echo "#SBATCH -c ${cpus}" >> slurm_script_${i}.sh
     echo "#SBATCH --mem=${memory}" >> slurm_script_${i}.sh
 
-    echo "/home/users/jcfan/MyPrograms/Hill_energy_per_cluster/build/hill_sherlock ${P} ${T} ${numFrame} ${save_every} ${resultDir} ${simulationDir}" >> slurm_script_${i}.sh
+    echo "${programDir} ${P} ${T} ${numFrame} ${save_every} ${resultDir} ${simulationDir}" >> slurm_script_${i}.sh
     
     # 提交作业
     sbatch slurm_script_${i}.sh

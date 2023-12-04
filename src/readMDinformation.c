@@ -1,58 +1,51 @@
 #include "readMDinformation.h"
 
-void readAtomInformation(FILE *fpr_position, FILE *fpr_velocity, int* numMol, double* boxLength, struct MOL *mol) {
+void readAtomInformation(char *filename, int *numMol, double *boxLength, struct MOL *mol) {
+    FILE *fpr;
     int i, j, index, mol_id;
     double lo, hi;
     char str[100];
 
-    // skip header lines of velocity file
-    for(i = 0; i < 9; i++){ 
-        fgets(str,100,fpr_velocity);
-    }
+    fpr = fopen(filename, "r");
 
-    // read lines of position file
-    fgets(str,100,fpr_position); // TIMESTEP
-    fgets(str,100,fpr_position); // timestep
-    fgets(str,100,fpr_position); // ITEM: NUMBER OF ATOMS
-    fgets(str,100,fpr_position); // number of atoms
+    // read lines of dump file
+    fgets(str,100,fpr); // TIMESTEP
+    fgets(str,100,fpr); // timestep
+    fgets(str,100,fpr); // ITEM: NUMBER OF ATOMS
+    fgets(str,100,fpr); // number of atoms
     *numMol = atoi(str) / 3;
-    fgets(str,100,fpr_position); // ITEM: BOX BOUNDS pp pp pp
-    fscanf(fpr_position,"%s",str); // xlo
+    fgets(str,100,fpr); // ITEM: BOX BOUNDS pp pp pp
+    fscanf(fpr,"%s",str); // xlo
     lo = atof(str);
-    fscanf(fpr_position,"%s",str); // xhi
+    fscanf(fpr,"%s",str); // xhi
     hi = atof(str);
     *boxLength = hi - lo;
-    fgets(str,100,fpr_position); // skip line?
-    fgets(str,100,fpr_position); // ylo yhi
-    fgets(str,100,fpr_position); // zlo zhi
-    fgets(str,100,fpr_position); // ITEM: ATOMS id mol type x y z ix iy iz vx vy vz element
+    fgets(str,100,fpr); // skip line?
+    fgets(str,100,fpr); // ylo yhi
+    fgets(str,100,fpr); // zlo zhi
+    fgets(str,100,fpr); // ITEM: ATOMS id mol type x y z ix iy iz vx vy vz element
 
     // read atom informations
     for(i = 0; i < *numMol * 3; i++) {
-        fscanf(fpr_position,"%s",str); // id
+        fscanf(fpr,"%s",str); // id
         index = (atoi(str) - 1) % 3; // O H1 H2 for 0 1 2
         mol_id = ceil(atof(str)/3) - 1;
-        fscanf(fpr_position,"%s",str); // type
-        fscanf(fpr_position,"%s",str); // x
+        fscanf(fpr, "%s", str); // type
+        fscanf(fpr, "%s", str); // x
         mol[mol_id].position[index][0] = atof(str);
-        fscanf(fpr_position,"%s",str); // y
+        fscanf(fpr, "%s", str); // y
         mol[mol_id].position[index][1] = atof(str);
-        fscanf(fpr_position,"%s",str); // z
+        fscanf(fpr, "%s", str); // z
         mol[mol_id].position[index][2] = atof(str);
-        fscanf(fpr_position,"%s",str); // element
-
-        fscanf(fpr_velocity,"%s",str); // id
-        fscanf(fpr_velocity,"%s",str); // type
-        fscanf(fpr_velocity,"%s",str); // vx
+        fscanf(fpr, "%s", str); // vx
         mol[mol_id].velocity[index][0] = atof(str);
-        fscanf(fpr_velocity,"%s",str); // vy
+        fscanf(fpr, "%s", str); // vy
         mol[mol_id].velocity[index][1] = atof(str);
-        fscanf(fpr_velocity,"%s",str); // vz
+        fscanf(fpr, "%s", str); // vz
         mol[mol_id].velocity[index][2] = atof(str);
-        fscanf(fpr_velocity,"%s",str); // element
+        fscanf(fpr, "%s", str); // element
     }
-    fgets(str,100,fpr_position); // skip line ?
-    fgets(str,100,fpr_velocity); // skip line ?
+    fclose(fpr);
 }
 
 
@@ -200,7 +193,7 @@ double relativeKE(struct MOL *mol, int mol1_id, int mol2_id){
 }
 
 // Calculate adjacency matrix accoding to Hill's energy criterion
-void getAdjacencyMatrix(struct MOL *mol, int **adjacencyMatrix, double **peMatrix, int numMol) {
+void getAdjacencyMatrix_Hill(struct MOL *mol, int **adjacencyMatrix, double **peMatrix, int numMol) {
     int mol1_id, mol2_id;
     double ke, pe;
     for (mol1_id = 0; mol1_id < numMol; mol1_id++) {
@@ -218,6 +211,34 @@ void getAdjacencyMatrix(struct MOL *mol, int **adjacencyMatrix, double **peMatri
         }
     }
 }
+
+// Calculate adjacency matrix accoding to O-O distance cutoff
+void getAdjacencyMatrix_distance(struct MOL *mol, int **adjacencyMatrix, int numMol, double boxLength, double cutoff) {
+    int mol1_id, mol2_id;
+    double dx, dy, dz, distance;
+
+    for (mol1_id = 0; mol1_id < numMol; mol1_id++) {
+        for (mol2_id = mol1_id + 1; mol2_id < numMol; mol2_id++) {
+            adjacencyMatrix[mol1_id][mol2_id] = 0;
+            adjacencyMatrix[mol2_id][mol1_id] = 0;
+
+            dx = mol[mol1_id].position[0][0] - mol[mol2_id].position[0][0];
+            dy = mol[mol1_id].position[0][1] - mol[mol2_id].position[0][1];
+            dz = mol[mol1_id].position[0][2] - mol[mol2_id].position[0][2];
+            dx = trueDistance(dx, boxLength);
+            dy = trueDistance(dy, boxLength);
+            dz = trueDistance(dz, boxLength);
+
+            distance = sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (distance < cutoff) {
+                adjacencyMatrix[mol1_id][mol2_id] = 1;
+                adjacencyMatrix[mol2_id][mol1_id] = 1;
+            }
+        }
+    }
+}
+
 
 // Energy per cluster as a function of cluster size
 void energy_perCluster_size(struct MOL *mol, int numClusters, int *clusterSizes, int **clusters, double *PE_perCluster_size_accumulated, double *KE_perCluster_size_accumulated) {
@@ -240,6 +261,12 @@ void save_result(char *filename, int max_size, int numFrame, int *size_count_acc
     FILE *fpw;
     fpw = fopen(filename, "w");
     double size_count_mean, degree_count_mean, PE_s_mean, KE_s_mean;
+
+    // Write header
+    fprintf(fpw, "number of frames = %d\n", numFrame);
+    fprintf(fpw, "s\tN_c\tN_k\tPE(s)\tKE(s)\n");
+
+    // Write data
     for (size = 0; size < max_size; size++) {
         size_count_mean = (1.0 * size_count_accumulated[size]) / (1.0 * numFrame);
         degree_count_mean = (1.0 * degree_count_accumulated[size]) / (1.0 * numFrame);
@@ -248,5 +275,6 @@ void save_result(char *filename, int max_size, int numFrame, int *size_count_acc
 
         fprintf(fpw, "%d\t%e\t%e\t%e\t%e\n", size, size_count_mean, degree_count_mean, PE_s_mean, KE_s_mean);
     }
+    
     fclose(fpw);
 }

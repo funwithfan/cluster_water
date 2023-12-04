@@ -1,7 +1,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
-struct MOL
-{
+struct MOL {
     double position[3][3];
     double velocity[3][3];
     //double com[3];

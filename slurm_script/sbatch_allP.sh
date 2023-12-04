@@ -1,12 +1,12 @@
 #!/bin/bash
 
-programDir="/home/users/jcfan/MyPrograms/cluster_energy/build/hill_sherlock"
+programDir="/home/users/jcfan/MyPrograms/cluster_energy/build/cluster_sherlock"
 
-P_list=(240 300 350 460 540)
-numFrame=2501
+P_list=(240) #(240 300 350 460 540)
+numFrame=5001
 save_every=100
-resultDir="/home/users/jcfan/sc_water/Hill_result"
-simulationDir="/scratch/users/jcfan/sc_water/MD"
+resultDir="/home/users/jcfan/sc_water/cluster_result"
+simulationDir="/scratch/users/jcfan/sc_water/MD/newRuns"
 
 # 使用 seq 命令生成 T1 和 T2 数组的元素
 T1=($(seq 300 25 1200))
@@ -25,7 +25,7 @@ for ((j=0; j<$num_P; j++)); do
         job_name="${P}_${T}"  
         output_file="${P}_${T}_%j.out" 
         error_file="${P}_${T}_%j.err" 
-        time_limit="5:00:00"
+        time_limit="11:00:00"
         partition="normal"
         cpus="1"
         memory="2GB"
