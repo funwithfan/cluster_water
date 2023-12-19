@@ -5,7 +5,7 @@ programDir="/home/users/jcfan/MyPrograms/cluster_energy/build/cluster_sherlock"
 P=240
 numFrame=5001
 save_every=100
-resultDir="/home/users/jcfan/sc_water/cluster_result"
+resultDir="/home/users/jcfan/sc_water/cluster_result_inner"
 simulationDir="/scratch/users/jcfan/sc_water/MD/newRuns"
 
 # 使用 seq 命令生成 T1 和 T2 数组的元素

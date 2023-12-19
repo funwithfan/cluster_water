@@ -44,7 +44,6 @@ int main(int argc, char ** argv) {
     int nodesDegree[N];
 
     char resultDir[FILENAME_MAX];
-    char resultDir_sub[FILENAME_MAX];
     char simulationDir[FILENAME_MAX];
     char filename_dump[FILENAME_MAX];
     char filename_result_hill[FILENAME_MAX];
@@ -68,14 +67,12 @@ int main(int argc, char ** argv) {
         printf("Local debugging:\n");
         p = 240;
         t = 700;
-        numFrame = 500;
+        numFrame = 10;
         save_every = 10;
         sprintf(resultDir, "/Users/jingcunfan/Documents/data_cp_network/DBSCAN_SPCE");
         sprintf(simulationDir, "/Users/jingcunfan/Documents/MD_simulations/sc_water/newRuns");
         
     }
-    for (t = 300; t <= 1200; t+=25) {
-        
     printf("P = %d atm\n", p);
     printf("T = %d K\n", t);
     printf("Number of frames = %d\n", numFrame);
@@ -85,12 +82,12 @@ int main(int argc, char ** argv) {
 
     // Create result directory
     char cmd[100];
-    sprintf(resultDir_sub, "%s/%datm", resultDir, p);
-    sprintf(cmd, "mkdir -p %s", resultDir_sub);
+    sprintf(resultDir, "%s/%datm", resultDir, p);
+    sprintf(cmd, "mkdir -p %s", resultDir);
     printf("%s\n", cmd);
     system(cmd);
-    sprintf(filename_result_hill, "%s/%datm_%dK_hill.txt", resultDir_sub, p, t);
-    sprintf(filename_result_cutoff, "%s/%datm_%dK_cutoff.txt", resultDir_sub, p, t);
+    sprintf(filename_result_hill, "%s/%datm_%dK_hill.txt", resultDir, p, t);
+    sprintf(filename_result_cutoff, "%s/%datm_%dK_cutoff.txt", resultDir, p, t);
 
     int size_count_accumulated_hill[N], degree_count_accumulated_hill[N];
     int size_count_accumulated_cutoff[N], degree_count_accumulated_cutoff[N];
@@ -179,7 +176,7 @@ int main(int argc, char ** argv) {
 
     printf("Result averaged over all %d frames and saved to %s\n", numFrame, filename_result_hill);
     printf("Result averaged over all %d frames and saved to %s\n", numFrame, filename_result_cutoff);
-    }
+
     free(peMatrix);
     free(adjacencyMatrix);
     free(clusters);

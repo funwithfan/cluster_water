@@ -256,6 +256,26 @@ void energy_perCluster_size(struct MOL *mol, int numClusters, int *clusterSizes,
     }
 }
 
+void inner_energy_perCluster_size(struct MOL *mol, double **peMatrix, int numClusters, int *clusterSizes, int **clusters, double *PE_perCluster_size_accumulated, double *KE_perCluster_size_accumulated) {
+    int i, j, cluster_id, size, molID, mol2ID;
+    double inner_pe;
+    for (cluster_id = 0; cluster_id < numClusters; cluster_id++) {
+        size = clusterSizes[cluster_id];
+        inner_pe = 0;
+        for (i = 0; i < size; i++) {
+            molID = clusters[cluster_id][i];
+            mol[molID].clusterID = cluster_id;
+            mol[molID].clusterSize = size;
+            KE_perCluster_size_accumulated[size] += mol[molID].KE;
+            for (j = i + 1; j < size; j++) {
+                mol2ID = clusters[cluster_id][j];
+                inner_pe += peMatrix[molID][mol2ID];
+            }
+        }
+        PE_perCluster_size_accumulated[size] += inner_pe;
+    }
+}
+
 void save_result(char *filename, int max_size, int numFrame, int *size_count_accumulated, int *degree_count_accumulated, double *PE_s_accumulated, double *KE_s_accumulated) {
     int size;
     FILE *fpw;
@@ -275,6 +295,25 @@ void save_result(char *filename, int max_size, int numFrame, int *size_count_acc
 
         fprintf(fpw, "%d\t%e\t%e\t%e\t%e\n", size, size_count_mean, degree_count_mean, PE_s_mean, KE_s_mean);
     }
-    
+
     fclose(fpw);
 }
+
+/*
+void inner_energy(int *mol_id_list, int numMol, double **peMatrix, struct MOL *mol, double *pe, double *ke) {
+    int i, j;
+    int mol1_id, mol2_id;
+    *ke = 0;
+    *pe = 0;
+    for (i = 0; i < numMol; i++) {
+        mol1_id = mol_id_list[i];
+        *ke += mol[mol1_id].KE;
+        for (j = 0; j < numMol; j++) {
+            if (i!=j) {
+                mol2_id = mol_id_list[j];
+                *pe += peMatrix[mol1_id][mol2_id];
+            }
+        }
+    }
+}
+*/
